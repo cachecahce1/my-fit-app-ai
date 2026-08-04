@@ -1,26 +1,123 @@
 @import "tailwindcss";
 
+/* ── NIGHT IRON design system ─────────────────────────────
+   Near-black graphite, warm bone type, one signal-ember
+   accent. Built for a phone held one-handed under gym light. */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #0b0d0f;
+  --surface: #14171b;
+  --raised: #1b1f25;
+  --line: #262c34;
+  --ink: #ece9e2;
+  --mut: #8a919c;
+  --faint: #565d68;
+  --ember: #ff5a1f;
+  --ember-soft: rgba(255, 90, 31, 0.14);
+  --ok: #4cc38a;
+  --ok-soft: rgba(76, 195, 138, 0.14);
+  --warn: #ffb224;
+  --bad: #ff5c5c;
+  --water: #4cb8e0;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-mut: var(--mut);
+  --color-faint: var(--faint);
+  --color-ember: var(--ember);
+  --color-ember-soft: var(--ember-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-water: var(--water);
+  --font-sans: var(--font-barlow), sans-serif;
+  --font-display: var(--font-barlow-condensed), sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--bg);
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(120% 60% at 50% -10%, rgba(255, 90, 31, 0.06), transparent 60%),
+    var(--bg);
+  color: var(--ink);
+  font-family: var(--font-barlow), sans-serif;
+  font-feature-settings: "tnum";
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* Display numerals & headings — gym-poster condensed */
+.display {
+  font-family: var(--font-barlow-condensed), sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mut);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+/* Number steppers & tap targets */
+.tap {
+  min-height: 44px;
+  min-width: 44px;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+input[type="number"] {
+  appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  appearance: none;
+}
+
+::selection {
+  background: var(--ember);
+  color: #0b0d0f;
+}
+
+/* Staggered page-load reveal */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.rise { animation: rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.rise-1 { animation-delay: 0.03s; }
+.rise-2 { animation-delay: 0.09s; }
+.rise-3 { animation-delay: 0.15s; }
+.rise-4 { animation-delay: 0.21s; }
+.rise-5 { animation-delay: 0.27s; }
+
+/* Rest timer pulse */
+@keyframes emberPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 90, 31, 0.35); }
+  50% { box-shadow: 0 0 0 10px rgba(255, 90, 31, 0); }
+}
+.pulse { animation: emberPulse 1.6s ease-out infinite; }
+
+/* Thin scrollbars on desktop */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
 }
