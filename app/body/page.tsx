@@ -50,6 +50,20 @@ export default function Body() {
     },
   });
 
+  const { data: lastShoulder } = useQuery({
+    queryKey: ["lastShoulder"],
+    queryFn: async () => {
+      const { data } = await supabase()
+        .from("body_metrics")
+        .select("log_date, shoulder_circumference_cm")
+        .not("shoulder_circumference_cm", "is", null)
+        .order("log_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
+
   const latest = trend?.at(-1);
   const chartData = (trend ?? []).map((r) => ({
     date: r.log_date.slice(5),
@@ -124,6 +138,25 @@ export default function Body() {
           </p>
         )}
       </section>
+
+      {/* V-taper ratio — the plan's signature metric (target 1.6 × waist) */}
+      {lastShoulder?.shoulder_circumference_cm != null && lastWaist?.[0]?.waist_cm != null && (
+        <section className="card rise rise-3 flex items-center justify-between p-4">
+          <div>
+            <p className="label">V-taper ratio</p>
+            <p className="text-xs text-faint">
+              shoulders {Number(lastShoulder.shoulder_circumference_cm)} ÷ waist{" "}
+              {Number(lastWaist[0].waist_cm)} · Greek target 1.60×
+            </p>
+          </div>
+          <p className="display text-4xl font-bold text-ember">
+            {(
+              Number(lastShoulder.shoulder_circumference_cm) / Number(lastWaist[0].waist_cm)
+            ).toFixed(2)}
+            ×
+          </p>
+        </section>
+      )}
 
       {/* Measurements */}
       <section className="card rise rise-3 p-4">

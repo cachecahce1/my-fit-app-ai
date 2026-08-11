@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase/client";
 import { suggestNext, type Suggestion } from "@/lib/progression";
-import { todayIST } from "@/lib/plan";
+import { todayIST, fmtRest } from "@/lib/plan";
 
 type TemplateExercise = {
   id: string;
@@ -41,6 +41,128 @@ type SetRow = {
 };
 
 const RPE_CHOICES = [7, 7.5, 8, 8.5, 9, 9.5, 10];
+
+// Day-specific warm-up prep (plan §4 — 8 minutes, every session)
+const WARMUP_PREP: Record<string, string> = {
+  Push: "Arm circles · 2×15 cable external rotations · 10 scap push-ups",
+  Pull: "2×20 s dead hangs · cat-cow ×8 · 2×15 light straight-arm pulldowns",
+  Legs: "15 bodyweight squats · leg swings · 90/90 hip rotations",
+};
+
+function WarmupCard({ templateName }: { templateName: string }) {
+  const kind = Object.keys(WARMUP_PREP).find((k) => templateName.includes(k));
+  return (
+    <details className="card group px-4 py-3">
+      <summary className="tap flex cursor-pointer list-none items-center justify-between">
+        <p className="label">Warm-up — 8 min</p>
+        <span className="text-faint transition-transform group-open:rotate-90">›</span>
+      </summary>
+      <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm text-mut">
+        <li>4 min brisk incline walk</li>
+        {kind && <li>{WARMUP_PREP[kind]}</li>}
+        <li>
+          Ramp lift #1: <span className="text-ink">50%×8 → 70%×4 → 85%×2</span> · later lifts: one
+          light feeder set
+        </li>
+      </ol>
+    </details>
+  );
+}
+
+function CardioCard({
+  sessionId,
+  logDate,
+  templateName,
+}: {
+  sessionId: string;
+  logDate: string;
+  templateName: string;
+}) {
+  // Leg days: optional easy cycle. Push/pull days: the incline-walk finisher.
+  const isLegs = templateName.includes("Legs");
+  const [mins, setMins] = useState(isLegs ? 10 : 13);
+  const [incline, setIncline] = useState(isLegs ? 0 : 11);
+  const [speed, setSpeed] = useState(isLegs ? 0 : 5.2);
+  const [logged, setLogged] = useState(false);
+
+  const log = useMutation({
+    mutationFn: async () => {
+      const { data: u } = await supabase().auth.getUser();
+      const { error } = await supabase().from("cardio_logs").insert({
+        user_id: u.user!.id,
+        session_id: sessionId,
+        log_date: logDate,
+        modality: isLegs ? "cycle" : "incline_walk",
+        duration_min: mins,
+        incline_pct: incline || null,
+        speed_kmh: speed || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => setLogged(true),
+  });
+
+  if (logged) {
+    return (
+      <div className="card mx-auto w-full max-w-xs p-4 text-sm text-ok">
+        ✓ Cardio logged — {mins} min {isLegs ? "cycle" : `incline walk @ ${incline}%`}
+      </div>
+    );
+  }
+
+  return (
+    <div className="card mx-auto w-full max-w-xs p-4 text-left">
+      <p className="label mb-1">{isLegs ? "Optional easy cycle" : "Cardio finisher"}</p>
+      <p className="mb-3 text-xs text-faint">
+        {isLegs ? "10 min, easy pace" : "12–15 min · 10–12% incline · 5–5.5 km/h · HR ~120–135"}
+      </p>
+      <div className="mb-3 flex gap-2">
+        <label className="flex-1">
+          <input
+            type="number"
+            inputMode="numeric"
+            value={mins}
+            onChange={(e) => setMins(parseInt(e.target.value) || 0)}
+            className="display w-full rounded-lg bg-raised py-2 text-center font-bold outline-none"
+          />
+          <p className="mt-0.5 text-center text-[9px] text-faint">MIN</p>
+        </label>
+        {!isLegs && (
+          <>
+            <label className="flex-1">
+              <input
+                type="number"
+                inputMode="decimal"
+                value={incline}
+                onChange={(e) => setIncline(parseFloat(e.target.value) || 0)}
+                className="display w-full rounded-lg bg-raised py-2 text-center font-bold outline-none"
+              />
+              <p className="mt-0.5 text-center text-[9px] text-faint">INCLINE %</p>
+            </label>
+            <label className="flex-1">
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                value={speed}
+                onChange={(e) => setSpeed(parseFloat(e.target.value) || 0)}
+                className="display w-full rounded-lg bg-raised py-2 text-center font-bold outline-none"
+              />
+              <p className="mt-0.5 text-center text-[9px] text-faint">KM/H</p>
+            </label>
+          </>
+        )}
+      </div>
+      <button
+        onClick={() => log.mutate()}
+        disabled={log.isPending || mins <= 0}
+        className="tap w-full rounded-xl bg-ember-soft py-2.5 text-sm font-bold text-ember disabled:opacity-50"
+      >
+        Log cardio
+      </button>
+    </div>
+  );
+}
 
 function RestTimer({ seconds, onDone }: { seconds: number; onDone: () => void }) {
   const [left, setLeft] = useState(seconds);
@@ -130,7 +252,7 @@ function ExerciseCard({
           </p>
           <p className="text-xs text-mut">
             {te.target_sets} × {te.rep_min}–{te.rep_max} @ RPE {te.target_rpe ?? "—"} · rest{" "}
-            {Math.round((te.rest_seconds ?? 90) / 60 * 10) / 10} min
+            {fmtRest(te.rest_seconds ?? 90)}
           </p>
         </div>
         <span className={`display ml-3 text-xl font-bold ${done ? "text-ok" : "text-faint"}`}>
@@ -264,7 +386,7 @@ export default function SessionPage() {
     queryFn: async () => {
       const { data } = await supabase()
         .from("workout_sessions")
-        .select("id, template_id, log_date, started_at, ended_at, notes")
+        .select("id, template_id, log_date, started_at, ended_at, notes, workout_templates(name)")
         .eq("id", id)
         .single();
       startRef.current = data?.started_at ?? null;
@@ -422,13 +544,17 @@ export default function SessionPage() {
             <p className="label">Minutes</p>
           </div>
         </div>
+        <CardioCard
+          sessionId={session.id}
+          logDate={session.log_date}
+          templateName={(session.workout_templates as unknown as { name: string } | null)?.name ?? ""}
+        />
         <button
           onClick={() => router.push("/")}
           className="tap display mx-auto w-full max-w-xs rounded-2xl bg-ember py-4 text-lg font-bold uppercase text-bg"
         >
-          Done → cardio walk
+          Done
         </button>
-        <p className="text-xs text-faint">12–15 min incline walk, 10–12%, 5–5.5 km/h</p>
       </div>
     );
   }
@@ -438,7 +564,9 @@ export default function SessionPage() {
       <header className="flex items-end justify-between">
         <div>
           <p className="label text-ember">{session.log_date}</p>
-          <h1 className="display text-3xl font-bold uppercase leading-none">Session</h1>
+          <h1 className="display text-3xl font-bold uppercase leading-none">
+            {(session.workout_templates as unknown as { name: string } | null)?.name ?? "Session"}
+          </h1>
         </div>
         <p className="text-right text-xs text-mut">
           {working.length} sets · {Math.round(volume).toLocaleString()} kg
@@ -446,6 +574,10 @@ export default function SessionPage() {
           {durationMin} min
         </p>
       </header>
+
+      <WarmupCard
+        templateName={(session.workout_templates as unknown as { name: string } | null)?.name ?? ""}
+      />
 
       {exercises.map((te) => {
         const exSets = (sets ?? []).filter((s) => s.exercise_id === te.exercises.id && !s.is_warmup);

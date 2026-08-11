@@ -69,3 +69,28 @@ export const DEFAULT_PLAN = {
 
 export const PB_CAP_G = 30;
 export const KCAL_HARD_FLOOR = 1500;
+
+export const PLAN_START = "2026-08-04";
+
+/** 1-based week of the 16-week protocol. */
+export function planWeek(date = todayIST()): number {
+  const ms = new Date(date + "T12:00:00Z").getTime() - new Date(PLAN_START + "T12:00:00Z").getTime();
+  return Math.floor(ms / (7 * 24 * 3600 * 1000)) + 1;
+}
+
+/** Roadmap phase for a plan week (KB §6.14). */
+export function phaseLabel(week: number): string {
+  if (week <= 2) return "Foundation";
+  if (week <= 8) return week === 7 ? "Cut block 1 — DELOAD WEEK" : "Cut block 1";
+  if (week === 9) return "Diet break";
+  if (week <= 16) return "Cut block 2";
+  return "Lean build";
+}
+
+/** "90 s" → human rest label. */
+export function fmtRest(s: number): string {
+  if (s < 60) return `${s} s`;
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return r === 0 ? `${m} min` : `${m}m ${r}s`;
+}

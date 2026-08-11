@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase/client";
-import { todayIST, isoDow, shiftDate } from "@/lib/plan";
+import { todayIST, isoDow, shiftDate, planWeek, phaseLabel } from "@/lib/plan";
 import {
   usePlan,
   useDailyActivity,
@@ -15,6 +15,62 @@ import {
   useUpsertBodyMetric,
 } from "@/lib/data";
 import { useState } from "react";
+
+const HABITS = [
+  { key: "morning_light", label: "☀️ Morning light" },
+  { key: "caffeine_cutoff_respected", label: "☕ Caffeine cutoff" },
+  { key: "posture_routine", label: "🧍 Posture routine" },
+  { key: "ab_vacuums", label: "🌀 Ab vacuums" },
+  { key: "bowel_movement", label: "✅ Gut" },
+] as const;
+
+function HabitsCard({ date }: { date: string }) {
+  const qc = useQueryClient();
+  const { data: habits } = useQuery({
+    queryKey: ["habits", date],
+    queryFn: async () => {
+      const { data } = await supabase().from("habit_logs").select("*").eq("log_date", date).maybeSingle();
+      return data;
+    },
+  });
+
+  const toggle = useMutation({
+    mutationFn: async (key: string) => {
+      const { data: u } = await supabase().auth.getUser();
+      const current = habits?.[key as keyof typeof habits] === true;
+      const { error } = await supabase()
+        .from("habit_logs")
+        .upsert(
+          { user_id: u.user!.id, log_date: date, [key]: !current },
+          { onConflict: "user_id,log_date" }
+        );
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["habits", date] }),
+  });
+
+  return (
+    <section className="card rise rise-5 p-4">
+      <p className="label mb-3">Daily habits</p>
+      <div className="flex flex-wrap gap-2">
+        {HABITS.map((h) => {
+          const on = habits?.[h.key as keyof typeof habits] === true;
+          return (
+            <button
+              key={h.key}
+              onClick={() => toggle.mutate(h.key)}
+              className={`tap rounded-full border px-3.5 py-2 text-sm font-medium transition-colors ${
+                on ? "border-ok bg-ok-soft text-ok" : "border-line bg-surface text-mut"
+              }`}
+            >
+              {h.label}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
 
 function SleepCard({ date }: { date: string }) {
   const qc = useQueryClient();
@@ -231,7 +287,18 @@ export default function Today() {
   return (
     <div className="space-y-4">
       <header className="rise rise-1">
-        <p className="label text-ember">{dateLabel}</p>
+        <div className="flex items-center justify-between">
+          <p className="label text-ember">{dateLabel}</p>
+          <span
+            className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest ${
+              phaseLabel(planWeek(date)).includes("DELOAD")
+                ? "border-warn text-warn"
+                : "border-line text-mut"
+            }`}
+          >
+            Week {planWeek(date)} · {phaseLabel(planWeek(date))}
+          </span>
+        </div>
         <h1 className="display text-4xl font-bold uppercase leading-none">
           {todayTemplate ? todayTemplate.name : "Rest day"}
         </h1>
@@ -344,6 +411,9 @@ export default function Today() {
 
       {/* Sleep */}
       <SleepCard date={date} />
+
+      {/* Daily habits — the plan's non-lifting protocol */}
+      <HabitsCard date={date} />
 
       {/* Supplements */}
       <section className="card rise rise-5 p-4">

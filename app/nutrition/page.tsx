@@ -70,7 +70,7 @@ export default function Nutrition() {
     queryFn: async () => {
       const { data } = await supabase()
         .from("meal_logs")
-        .select("id, meal_slot, is_treat, meal_items(id, quantity, kcal, protein_g, foods(name, serving_unit))")
+        .select("id, meal_slot, is_treat, meal_items(id, quantity, kcal, protein_g, carbs_g, fat_g, fibre_g, foods(name, serving_unit))")
         .eq("log_date", date)
         .is("deleted_at", null)
         .order("logged_at");
@@ -102,6 +102,9 @@ export default function Nutrition() {
         kcal += Number(i.kcal ?? 0);
         protein += Number(i.protein_g ?? 0);
       }
+    const carbs = (meals ?? []).flatMap((m) => m.meal_items).reduce((a, i) => a + Number((i as { carbs_g?: number }).carbs_g ?? 0), 0);
+    const fat = (meals ?? []).flatMap((m) => m.meal_items).reduce((a, i) => a + Number((i as { fat_g?: number }).fat_g ?? 0), 0);
+    const fibre = (meals ?? []).flatMap((m) => m.meal_items).reduce((a, i) => a + Number((i as { fibre_g?: number }).fibre_g ?? 0), 0);
     // PB guard: sum quantity × serving_size of pb_capped foods
     const pbFood = foods?.find((f) => f.tags?.includes("pb_capped"));
     if (pbFood) {
@@ -109,7 +112,7 @@ export default function Nutrition() {
         for (const i of m.meal_items)
           if (i.foods?.name === pbFood.name) pbGrams += Number(i.quantity) * Number(pbFood.serving_size);
     }
-    return { kcal, protein, pbGrams };
+    return { kcal, protein, carbs, fat, fibre, pbGrams };
   }, [meals, foods]);
 
   const logFoods = useMutation({
@@ -224,6 +227,23 @@ export default function Nutrition() {
           <p className="text-[10px] text-faint">this week</p>
         </div>
       </section>
+
+      {/* Secondary macros vs plan targets */}
+      <div className="rise rise-2 -mt-2 flex justify-between px-1 text-xs text-mut">
+        <span>
+          Carbs <span className="text-ink">{Math.round(totals.carbs)}</span>/{plan.carbs_g_target ?? 185}g
+        </span>
+        <span>
+          Fat <span className="text-ink">{Math.round(totals.fat)}</span>/{plan.fat_g_target ?? 55}g
+        </span>
+        <span>
+          Fibre{" "}
+          <span className={totals.fibre >= (plan.fibre_g_target ?? 30) ? "text-ok" : "text-ink"}>
+            {Math.round(totals.fibre)}
+          </span>
+          /{plan.fibre_g_target ?? 30}g
+        </span>
+      </div>
 
       {totals.pbGrams > PB_CAP_G && (
         <div className="rise rounded-xl border border-warn/40 bg-warn/10 px-4 py-3 text-sm text-warn">
