@@ -289,14 +289,19 @@ export default function Today() {
       <header className="rise rise-1">
         <div className="flex items-center justify-between">
           <p className="label text-ember">{dateLabel}</p>
-          <span
-            className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest ${
-              phaseLabel(planWeek(date)).includes("DELOAD")
-                ? "border-warn text-warn"
-                : "border-line text-mut"
-            }`}
-          >
-            Week {planWeek(date)} · {phaseLabel(planWeek(date))}
+          <span className="flex items-center gap-2">
+            <span
+              className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest ${
+                phaseLabel(planWeek(date)).includes("DELOAD")
+                  ? "border-warn text-warn"
+                  : "border-line text-mut"
+              }`}
+            >
+              Week {planWeek(date)} · {phaseLabel(planWeek(date))}
+            </span>
+            <Link href="/settings" className="tap -m-2 p-2 text-faint" aria-label="Settings">
+              ⚙
+            </Link>
           </span>
         </div>
         <h1 className="display text-4xl font-bold uppercase leading-none">
