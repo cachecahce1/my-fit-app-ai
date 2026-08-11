@@ -80,6 +80,14 @@ export default function WorkoutStart() {
         )}
       </div>
 
+      <Link href="/workout/history" className="tap card rise rise-3 flex items-center justify-between p-4">
+        <div>
+          <p className="label">Exercise history</p>
+          <p className="text-sm text-mut">Top-set weight over time, per exercise</p>
+        </div>
+        <span className="text-xl">📈</span>
+      </Link>
+
       {history && history.length > 0 && (
         <section className="rise rise-3">
           <p className="label mb-2">Recent sessions</p>
