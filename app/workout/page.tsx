@@ -1,7 +1,9 @@
 "use client";
-// TRAIN — template picker (today's day first) + recent session history.
+// TRAIN — pick a session to PREVIEW (nothing starts until you press
+// "Start session" on the next screen).
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase/client";
 import { todayIST, isoDow } from "@/lib/plan";
 
@@ -9,8 +11,7 @@ const DOW = ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function WorkoutStart() {
   const router = useRouter();
-  const date = todayIST();
-  const dow = isoDow(date);
+  const dow = isoDow(todayIST());
 
   const { data: templates } = useQuery({
     queryKey: ["templates"],
@@ -29,41 +30,12 @@ export default function WorkoutStart() {
     queryFn: async () => {
       const { data } = await supabase()
         .from("workout_sessions")
-        .select("id, log_date, ended_at, started_at, workout_templates(name)")
+        .select("id, log_date, ended_at, workout_templates(name)")
         .is("deleted_at", null)
         .order("log_date", { ascending: false })
         .limit(10);
       return data ?? [];
     },
-  });
-
-  const start = useMutation({
-    mutationFn: async (templateId: string) => {
-      const { data: u } = await supabase().auth.getUser();
-      // Resume an unfinished session for this template today instead of duplicating
-      const { data: open } = await supabase()
-        .from("workout_sessions")
-        .select("id")
-        .eq("log_date", date)
-        .eq("template_id", templateId)
-        .is("ended_at", null)
-        .is("deleted_at", null)
-        .maybeSingle();
-      if (open) return open.id;
-      const { data, error } = await supabase()
-        .from("workout_sessions")
-        .insert({
-          user_id: u.user!.id,
-          template_id: templateId,
-          log_date: date,
-          started_at: new Date().toISOString(),
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
-      return data.id;
-    },
-    onSuccess: (id) => router.push(`/workout/session/${id}`),
   });
 
   const ordered = [...(templates ?? [])].sort((a, b) => {
@@ -77,17 +49,17 @@ export default function WorkoutStart() {
       <header className="rise rise-1">
         <p className="label text-ember">Train</p>
         <h1 className="display text-4xl font-bold uppercase leading-none">Pick your session</h1>
+        <p className="mt-1 text-sm text-mut">Tap to preview — nothing starts yet.</p>
       </header>
 
       <div className="rise rise-2 space-y-2.5">
         {ordered.map((t) => {
           const isToday = t.day_of_week === dow;
           return (
-            <button
+            <Link
               key={t.id}
-              disabled={start.isPending}
-              onClick={() => start.mutate(t.id)}
-              className={`tap card flex w-full items-center justify-between p-4 text-left transition-colors ${
+              href={`/workout/${t.id}`}
+              className={`tap card flex w-full items-center justify-between p-4 text-left ${
                 isToday ? "border-ember bg-ember-soft" : ""
               }`}
             >
@@ -97,8 +69,11 @@ export default function WorkoutStart() {
                 </p>
                 <p className="text-sm text-mut">{t.focus}</p>
               </div>
-              <span className="label">{isToday ? "Today" : DOW[t.day_of_week ?? 0]}</span>
-            </button>
+              <span className="flex items-center gap-2">
+                <span className="label">{isToday ? "Today" : DOW[t.day_of_week ?? 0]}</span>
+                <span className="text-faint">›</span>
+              </span>
+            </Link>
           );
         })}
         {templates?.length === 0 && (

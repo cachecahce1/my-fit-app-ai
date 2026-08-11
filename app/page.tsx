@@ -241,10 +241,14 @@ export default function Today() {
       {/* Start / resume workout */}
       {todayTemplate && (
         <Link
-          href={todaySession && !todaySession.ended_at ? `/workout/session/${todaySession.id}` : "/workout"}
+          href={
+            todaySession && !todaySession.ended_at
+              ? `/workout/session/${todaySession.id}`
+              : `/workout/${todayTemplate.id}`
+          }
           className="rise rise-1 tap display block rounded-2xl bg-ember py-4 text-center text-xl font-bold uppercase tracking-wide text-bg"
         >
-          {todaySession ? (todaySession.ended_at ? "Session done ✓" : "Resume session →") : "Start workout →"}
+          {todaySession ? (todaySession.ended_at ? "Session done ✓" : "Resume session →") : "View today's workout →"}
         </Link>
       )}
       {dow === 7 && (
