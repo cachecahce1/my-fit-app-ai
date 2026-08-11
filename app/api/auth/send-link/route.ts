@@ -41,12 +41,12 @@ export async function POST(request: NextRequest) {
     method: "POST",
     headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: `Greek God Tracker <${from}>`,
+      from: `My Fitness App <${from}>`,
       to: [email],
       subject: "Your login link",
       html: `
         <div style="font-family:Arial,sans-serif;background:#0b0d0f;color:#ece9e2;padding:32px;border-radius:16px">
-          <p style="color:#ff5a1f;font-size:12px;letter-spacing:2px;margin:0">GREEK GOD PROTOCOL</p>
+          <p style="color:#ff5a1f;font-size:12px;letter-spacing:2px;margin:0">MY FITNESS APP</p>
           <h1 style="margin:8px 0 24px">Log it or it didn't happen.</h1>
           <a href="${link}"
              style="display:inline-block;background:#ff5a1f;color:#0b0d0f;font-weight:bold;

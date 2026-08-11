@@ -17,11 +17,11 @@ const barlowCondensed = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
-  title: "Greek God Tracker",
+  title: "My Fitness App",
   description: "Cut. Recomp. Log everything.",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icon.svg" },
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "GG Tracker" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "My Fitness App" },
 };
 
 export const viewport: Viewport = {

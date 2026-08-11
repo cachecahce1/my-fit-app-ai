@@ -1,4 +1,4 @@
-# 🏋️ Greek God Tracker
+# 🏋️ My Fitness App
 
 A personal fitness logging PWA built for one job: **executing a 16-week cut/recomp protocol without guessing**. Dark-mode-first, designed to be used one-handed on a phone between sets, with an AI coach bridge so Claude can review your fortnight from a single JSON snapshot.
 

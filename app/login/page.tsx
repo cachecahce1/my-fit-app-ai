@@ -50,7 +50,7 @@ export default function Login() {
   return (
     <div className="flex min-h-[80vh] flex-col justify-center gap-8">
       <div className="rise rise-1">
-        <p className="label text-ember">Greek God Protocol</p>
+        <p className="label text-ember">My Fitness App</p>
         <h1 className="display mt-1 text-5xl font-bold uppercase leading-[0.95]">
           Log it
           <br />
