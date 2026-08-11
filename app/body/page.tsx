@@ -1,6 +1,7 @@
 "use client";
 // BODY — weight trend (7-day avg is the number that matters), tape
-// measurements (Sunday prompt), monthly extras.
+// measurements (Sunday prompt), monthly extras, photos entry.
+import Link from "next/link";
 import { useState } from "react";
 import {
   ResponsiveContainer,
@@ -27,6 +28,40 @@ const TAPE_FIELDS = [
   { key: "shoulder_circumference_cm", label: "Shoulder circumference", cadence: "monthly" },
   { key: "bia_body_fat_pct", label: "BIA body-fat %", cadence: "monthly" },
 ] as const;
+
+function PhotosLink() {
+  const { data: last } = useQuery({
+    queryKey: ["lastPhoto"],
+    queryFn: async () => {
+      const { data } = await supabase()
+        .from("progress_photos")
+        .select("log_date")
+        .order("log_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
+  const daysSince = last
+    ? Math.floor((Date.now() - new Date(last.log_date + "T12:00:00Z").getTime()) / 86400000)
+    : null;
+  const due = daysSince === null || daysSince >= 14;
+  return (
+    <Link href="/photos" className="tap card rise rise-2 flex items-center justify-between p-4">
+      <div>
+        <p className="label">Progress photos</p>
+        <p className={`text-sm ${due ? "text-warn" : "text-mut"}`}>
+          {daysSince === null
+            ? "No baseline yet — take the week-0 set"
+            : due
+            ? `${daysSince} days since last shoot — photo day`
+            : `Last shoot ${daysSince} day${daysSince === 1 ? "" : "s"} ago`}
+        </p>
+      </div>
+      <span className="text-xl">📷</span>
+    </Link>
+  );
+}
 
 export default function Body() {
   const date = todayIST();
@@ -138,6 +173,9 @@ export default function Body() {
           </p>
         )}
       </section>
+
+      {/* Progress photos */}
+      <PhotosLink />
 
       {/* V-taper ratio — the plan's signature metric (target 1.6 × waist) */}
       {lastShoulder?.shoulder_circumference_cm != null && lastWaist?.[0]?.waist_cm != null && (
