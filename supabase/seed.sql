@@ -106,12 +106,13 @@ begin
     (uid, '2026-09-01', 7500);
 
   -- Templates
+  -- Week order L-P-P-P-P-L: legs bookend the week, push/pull alternate between
   insert into workout_templates (user_id, plan_version_id, name, day_of_week, focus, sort_order)
-    values (uid, pv, 'Push A', 1, 'Delt priority', 1) returning id into t_push_a;
+    values (uid, pv, 'Legs A + Abs', 1, 'Quads', 1) returning id into t_legs_a;
   insert into workout_templates (user_id, plan_version_id, name, day_of_week, focus, sort_order)
-    values (uid, pv, 'Pull A', 2, 'Lat width', 2) returning id into t_pull_a;
+    values (uid, pv, 'Push A', 2, 'Delt priority', 2) returning id into t_push_a;
   insert into workout_templates (user_id, plan_version_id, name, day_of_week, focus, sort_order)
-    values (uid, pv, 'Legs A + Abs', 3, 'Quads', 3) returning id into t_legs_a;
+    values (uid, pv, 'Pull A', 3, 'Lat width', 3) returning id into t_pull_a;
   insert into workout_templates (user_id, plan_version_id, name, day_of_week, focus, sort_order)
     values (uid, pv, 'Push B', 4, 'Chest priority', 4) returning id into t_push_b;
   insert into workout_templates (user_id, plan_version_id, name, day_of_week, focus, sort_order)
