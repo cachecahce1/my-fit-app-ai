@@ -38,11 +38,10 @@ export default function WorkoutStart() {
     },
   });
 
-  const ordered = [...(templates ?? [])].sort((a, b) => {
-    const at = a.day_of_week === dow ? -1 : 0;
-    const bt = b.day_of_week === dow ? -1 : 0;
-    return at - bt || (a.day_of_week ?? 9) - (b.day_of_week ?? 9);
-  });
+  // Always weekday order — today is highlighted in place, never moved
+  const ordered = [...(templates ?? [])].sort(
+    (a, b) => (a.day_of_week ?? 9) - (b.day_of_week ?? 9)
+  );
 
   return (
     <div className="space-y-5">
